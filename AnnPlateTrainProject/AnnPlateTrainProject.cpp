@@ -38,6 +38,7 @@ int main()
 
 void trainAnnChar()
 {
+	static int count = 5;
 	cout << "车牌字符识别-字母数字ann模型训练" << endl;
 	//cout << "训练数据加载中..." << endl;
 	timeStart("", "训练数据加载中...");
@@ -74,6 +75,10 @@ void trainAnnChar()
 		getAnnHogFeatures(image, features);
 		//归一化一通道一行
 		features = features.reshape(1, 1);
+		if (count > 0) {
+			printf("Hog 特征维度%d：\n", features.cols);
+			count--;
+		}
 		//2个集合 一个样本一个标签
 		//Mat支持每一行插入（Mat::push_back），这一点与vector类似，
 		//将一行Mat插入到另外 一个Mat我们只需要保证两者的cols是相同的。
@@ -111,6 +116,7 @@ void trainAnnChar()
 	//三层神经元：输入、隐藏、输出，如果有多个隐藏层可以创建更多的层数
 	layers.create(1, 3, CV_32SC1);
 	//输入层神经元数量(samples.cols应该和特征有关，但是输入层神经元为什么等于它，没理解)
+	//samples.cols等于Hog特征的维度，以特征维度作为输入层神经元数量这样就好理解了
 	layers.at<int>(0) = samples.cols;
 	//隐藏层神经元数量，这个需要调整
 	layers.at<int>(1) = 68;
@@ -152,6 +158,7 @@ void trainAnnChar()
 //车牌汉字训练
 void trainAnnChinese()
 {
+	static int count = 5;
 	cout << "车牌字符识别-汉字ann模型训练" << endl;
 	//cout << "训练数据加载中..." << endl;
 	timeStart("", "训练数据加载中...");
@@ -187,6 +194,10 @@ void trainAnnChinese()
 		getAnnHogFeatures(image,features);
 		//归一化一通道一行
 		features = features.reshape(1, 1);
+		if (count >0) {
+			printf("Hog 特征维度%d：\n",features.cols);
+			count--;
+		}
 		//2个集合 一个样本一个标签
 		//Mat支持每一行插入（Mat::push_back），这一点与vector类似，
 		//将一行Mat插入到另外 一个Mat我们只需要保证两者的cols是相同的。
@@ -224,6 +235,7 @@ void trainAnnChinese()
 	//三层神经元：输入、隐藏、输出，如果有多个隐藏层可以创建更多的层数
 	layers.create(1,3, CV_32SC1);
 	//输入层神经元数量(samples.cols应该和特征有关，但是输入层神经元为什么等于它，没理解)
+	//samples.cols等于Hog特征的维度，以特征维度作为输入层神经元数量这样就好理解了
 	layers.at<int>(0) = samples.cols;
 	//隐藏层神经元数量，这个需要调整
 	layers.at<int>(1) = 62;
@@ -264,11 +276,13 @@ void trainAnnChinese()
 
 //提取HOG特征
 //HOG特征：方向梯度直方图，使用于轮廓提取
+//https://www.jianshu.com/p/0381cac6dc30
 void getAnnHogFeatures(const Mat image, Mat& features)
 {
-	static int count = -1;
-	//创建HOG特征
-	HOGDescriptor hog(Size(128, 64), Size(16, 16), Size(8, 8), Size(8, 8), 3);
+	static int count = 0;
+	//创建HOG特征,测试发现窗口大小影响特征维度，（16，16）时为12维，（32，32）时为108维，（128，64）时为1260维
+	//而这个维度将会作为神经网络输入层的神经数据，由此可以看出这将直接影响训练速度
+	HOGDescriptor hog(Size(32,32), Size(16, 16), Size(8, 8), Size(8, 8), 3);
 	vector<float> descriptor;
 	Mat trainImg = Mat(hog.winSize, CV_32S);
 	//归一化
@@ -278,9 +292,9 @@ void getAnnHogFeatures(const Mat image, Mat& features)
 	//转成mat
 	Mat featureMat = Mat(descriptor);
 	featureMat.copyTo(features);
-	if (count == 1) {
+	if (count > 0) {
 		cout << "winW: " << hog.winSize.width << "	winH: " << hog.winSize.height << endl;
-		count = -1;
+		count--;
 	}
 }
 
