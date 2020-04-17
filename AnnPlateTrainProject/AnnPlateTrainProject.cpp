@@ -27,11 +27,12 @@ long timeCount = 0;
 void timeCountTask();
 void timeStart(string startMessage,string runningMessage);
 void timeEnd(string endMessage);
-thread timeThread;
 
 int main()
 {
 	trainAnnChar();
+	printf("rest for 10 seconds...do not shutdown!\n\n");
+	Sleep(10000);
 	trainAnnChinese();
 	return 0;
 }
@@ -39,7 +40,7 @@ int main()
 void trainAnnChar()
 {
 	static int count = 5;
-	cout << "车牌字符识别-字母数字ann模型训练" << endl;
+	printf("车牌字符识别-字母数字ann模型训练\n");
 	//cout << "训练数据加载中..." << endl;
 	timeStart("", "训练数据加载中...");
 
@@ -159,7 +160,7 @@ void trainAnnChar()
 void trainAnnChinese()
 {
 	static int count = 5;
-	cout << "车牌字符识别-汉字ann模型训练" << endl;
+	printf("车牌字符识别-汉字ann模型训练\n");
 	//cout << "训练数据加载中..." << endl;
 	timeStart("", "训练数据加载中...");
 	//加载图片并打上标签
@@ -298,19 +299,23 @@ void getAnnHogFeatures(const Mat image, Mat& features)
 	}
 }
 
-//计时任务
+//计时任务(有bug)
 void timeCountTask() {
 	while (running) {
+		if (!running)return;
 		timeCount++;
 		printf("=========%s%ld========\n", message.c_str(),timeCount);
-		this_thread::sleep_for(chrono::milliseconds(1000));
+		//cout << "=========" << message << timeCount << "=========" <<endl;
+		Sleep(1000);
 	}
+	return;
 }
 
 //开始计时
 void timeStart(string startMessage,string runningMessage) {
-	timeThread = thread(timeCountTask);
+	thread timeThread(timeCountTask);
 	printf("%s\n", startMessage.c_str());
+	//cout << startMessage << endl;
 	message = runningMessage;
 	timeCount = 0;
 	running = true;
@@ -321,4 +326,6 @@ void timeStart(string startMessage,string runningMessage) {
 void timeEnd(string endMessage) {
 	running = false;
 	printf("=========%s用时%lds========\n\n", endMessage.c_str(),timeCount);
+	//cout << "=========" << endMessage << "用时" << timeCount << "s=========" << endl << endl;
+	Sleep(1000);
 }
